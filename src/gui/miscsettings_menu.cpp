@@ -42,7 +42,7 @@
 #include <gui/plugins.h>
 #include <gui/sleeptimer.h>
 #include <gui/zapit_setup.h>
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 #include <gui/kerneloptions.h>
 #endif
 
@@ -67,6 +67,7 @@ CMiscMenue::CMiscMenue()
 {
 	width = 50;
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	fanNotifier = NULL;
 	cpuNotifier = NULL;
 	sectionsdConfigNotifier = NULL;
@@ -342,7 +343,7 @@ int CMiscMenue::showMiscSettingsMenu()
 	mf->setHint("", LOCALE_MENU_HINT_MISC_CPUFREQ);
 	misc_menue.addItem(mf);
 #endif /*CPU_FREQ*/
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	// kerneloptions
 	CKernelOptions kernelOptions;
 	mf = new CMenuForwarder(LOCALE_KERNELOPTIONS_HEAD, true, NULL, &kernelOptions, NULL, CRCInput::convertDigitToKey(shortcut++));
@@ -356,6 +357,7 @@ int CMiscMenue::showMiscSettingsMenu()
 	misc_menue.addItem(mf);
 	int res = misc_menue.exec(NULL, "");
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	delete fanNotifier;
 	fanNotifier = NULL;
 	delete sectionsdConfigNotifier;
@@ -387,11 +389,15 @@ void CMiscMenue::showMiscSettingsMenuGeneral(CMenuWidget *ms_general)
 	mc->setHint("", LOCALE_MENU_HINT_CACHE_TXT);
 	ms_general->addItem(mc);
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	//fan speed
 	if (g_info.hw_caps->has_fan)
 	{
 		if (fanNotifier == NULL)
 			fanNotifier = new CFanControlNotifier();
+#if defined (BOXMODEL_DM8000) || defined (BOXMODEL_DM820) || defined (BOXMODEL_DM7080)
+	CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 0, 1, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
+#else
 		CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 1, 14, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
 		mn->setHint("", LOCALE_MENU_HINT_FAN_SPEED);
 		ms_general->addItem(mn);
