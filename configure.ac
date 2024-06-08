@@ -1,8 +1,9 @@
-define(ver_major, 3)
-define(ver_minor, 12)
+# explicit defines for separate revision handling
+define(ver_major, 4)
+define(ver_minor, 0)
 define(ver_micro, 0)
 
-AC_INIT(Neutrino-Tangos, ver_major.ver_minor.ver_micro)
+AC_INIT(DDT-Neutrino, ver_major.ver_minor.ver_micro)
 AM_INIT_AUTOMAKE([nostdinc foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
@@ -143,6 +144,7 @@ if test "$BOXTYPE" = "generic"; then
 fi
 
 if test "$BOXTYPE" = "armbox" ||
+   test "$BOXTYPE" = "mipsbox" ||
    test "$BOXTYPE" = "generic"; then
 	AC_DEFINE(SCREENSHOT, 1, [Define to 1 if the platform supports screenshots])
 fi
@@ -345,6 +347,26 @@ AC_ARG_ENABLE(fribidi,
 	AS_HELP_STRING([--enable-fribidi], [enable fribidi support @<:@default=no@:>@]),
 	AC_DEFINE(ENABLE_FRIBIDI, 1, [enable fribidi support]))
 AM_CONDITIONAL(ENABLE_FRIBIDI, test "$enable_fribidi" = "yes")
+
+AC_ARG_WITH(stb-hal-includes,
+	AS_HELP_STRING([--with-stb-hal-includes=PATH], [path for libstb-hal includes [[NONE]]]),
+	[STB_HAL_INC="$withval"],
+	[STB_HAL_INC=""])
+
+AC_ARG_WITH(stb-hal-build,
+	AS_HELP_STRING([--with-stb-hal-build=PATH], [path where libstb-hal is built [[NONE]]]),
+	[STB_HAL_LIB="-L$withval"],
+	[STB_HAL_LIB=""])
+
+	AC_DEFINE(USE_STB_HAL, 1, [use libstb-hal])
+	if test "$STB_HAL_INC" = ""; then
+		AC_MSG_ERROR([need libstb-hal includes path with --with-stb-hal-includes=...])
+	fi
+	HWLIB_CFLAGS="-I$STB_HAL_INC"
+
+AM_CONDITIONAL(USE_STB_HAL,
+	test "$BOXTYPE" = "armbox"    ||
+	test "$BOXTYPE" = "mipsbox")
 
 # hack, so that framebuffer.h does not need to be included everywhere...
 AC_DEFINE(fb_pixel_t, uint32_t, [hack, so that framebuffer.h does not need to be included everywhere...])
