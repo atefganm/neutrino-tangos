@@ -65,7 +65,7 @@
 #include <driver/radiotext.h>
 #include <driver/scanepg.h>
 #include <driver/hdmi_cec.h>
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 #include "gui/3dsetup.h"
 #endif
 
@@ -280,6 +280,9 @@ CNeutrinoApp::CNeutrinoApp()
 	frameBuffer = CFrameBuffer::getInstance();
 	frameBuffer->setIconBasePath(ICONSDIR);
 	SetupFrameBuffer();
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 // needs setup twice
+	SetupFrameBuffer();
+#endif
 
 	mode 			= NeutrinoModes::mode_unknown;
 	lastMode		= NeutrinoModes::mode_unknown;
@@ -455,6 +458,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	if (g_settings.channel_mode_initial_radio > -1)
 		g_settings.channel_mode_radio = g_settings.channel_mode_initial_radio;
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	g_settings.fan_speed = configfile.getInt32( "fan_speed", 1);
 	if(g_settings.fan_speed < 1) g_settings.fan_speed = 1;
 
@@ -462,13 +466,13 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.srs_algo = configfile.getInt32( "srs_algo", 1);
 	g_settings.srs_ref_volume = configfile.getInt32( "srs_ref_volume", 40);
 	g_settings.srs_nmgr_enable = configfile.getInt32( "srs_nmgr_enable", 0);
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	g_settings.ac3_pass = configfile.getInt32( "ac3_pass", 0);
 	g_settings.dts_pass = configfile.getInt32( "dts_pass", 0);
 #else
 	g_settings.hdmi_dd = configfile.getInt32( "hdmi_dd", 0);
 	g_settings.spdif_dd = configfile.getInt32( "spdif_dd", 1);
-#endif // HAVE_ARM_HARDWARE
+#endif // HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	g_settings.analog_out = configfile.getInt32( "analog_out", 1);
 	g_settings.avsync = configfile.getInt32( "avsync", 1);
 	g_settings.clockrec = configfile.getInt32( "clockrec", 1);
@@ -488,7 +492,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 		g_settings.enabled_auto_modes[i] = configfile.getInt32(cfg_key, 1);
 	}
 
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	g_settings.zappingmode = configfile.getInt32("zappingmode", 0);
 	g_settings.hdmi_colorimetry = configfile.getInt32("hdmi_colorimetry", 0);
 #endif
@@ -520,7 +524,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 		sprintf(cfg_key, "ci_pincode_%d", i);
 		g_settings.ci_pincode[i] = configfile.getString(cfg_key, "");
 		sprintf(cfg_key, "ci_clock_%d", i);
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 		g_settings.ci_clock[i] = configfile.getInt32(cfg_key, 6);
 #else
 		g_settings.ci_clock[i] = configfile.getInt32(cfg_key, 9);
@@ -797,7 +801,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.recording_stream_subtitle_pids  = configfile.getBool("recordingmenu.stream_subtitle_pids", true);
 	g_settings.recording_stream_pmt_pid        = configfile.getBool("recordingmenu.stream_pmt_pid"      , false);
 	g_settings.recording_filename_template     = configfile.getString("recordingmenu.filename_template" , "%C_%T_%d_%t");
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	g_settings.recording_bufsize               = configfile.getInt32("recording_bufsize", 4);
 	g_settings.recording_bufsize_dmx           = configfile.getInt32("recording_bufsize_dmx", 2);
 #endif
@@ -1452,13 +1456,14 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32( "channel_mode_initial", g_settings.channel_mode_initial );
 	configfile.setInt32( "channel_mode_initial_radio", g_settings.channel_mode_initial_radio );
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	configfile.setInt32( "fan_speed", g_settings.fan_speed);
 
 	configfile.setInt32( "srs_enable", g_settings.srs_enable);
 	configfile.setInt32( "srs_algo", g_settings.srs_algo);
 	configfile.setInt32( "srs_ref_volume", g_settings.srs_ref_volume);
 	configfile.setInt32( "srs_nmgr_enable", g_settings.srs_nmgr_enable);
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	configfile.setInt32( "ac3_pass", g_settings.ac3_pass);
 	configfile.setInt32( "dts_pass", g_settings.dts_pass);
 #else
@@ -1701,7 +1706,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setBool  ("recordingmenu.stream_subtitle_pids" , g_settings.recording_stream_subtitle_pids );
 	configfile.setBool  ("recordingmenu.stream_pmt_pid"       , g_settings.recording_stream_pmt_pid       );
 	configfile.setString("recordingmenu.filename_template"    , g_settings.recording_filename_template    );
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	configfile.setInt32 ("recording_bufsize"                  , g_settings.recording_bufsize);
 	configfile.setInt32 ("recording_bufsize_dmx"              , g_settings.recording_bufsize_dmx);
 #endif
@@ -2735,7 +2740,7 @@ TIMER_START();
 	// init audio settings
 	audioDecoder->SetSRS(g_settings.srs_enable, g_settings.srs_nmgr_enable, g_settings.srs_algo, g_settings.srs_ref_volume);
 	//audioDecoder->setVolume(g_settings.current_volume, g_settings.current_volume);
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	audioDecoder->SetHdmiDD(g_settings.ac3_pass ? true : false);
 	audioDecoder->SetSpdifDD(g_settings.dts_pass ? true : false);
 #else
@@ -2936,7 +2941,7 @@ TIMER_START();
 	cCA::GetInstance()->setCheckLiveSlot(g_settings.ci_check_live);
 	//InitZapper();
 
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	C3DSetup::getInstance()->exec(NULL, "zapped");
 #endif
 	SHTDCNT::getInstance()->init();
@@ -2949,7 +2954,7 @@ TIMER_START();
 
 	CWeather::getInstance()->setCoords(g_settings.weather_location, g_settings.weather_city);
 
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	videoDecoder->SetControl(VIDEO_CONTROL_ZAPPING_MODE, g_settings.zappingmode);
 	videoDecoder->SetHDMIColorimetry((HDMI_COLORIMETRY) g_settings.hdmi_colorimetry);
 #endif
@@ -3082,7 +3087,7 @@ void CNeutrinoApp::RealRun()
 		if (msg <= CRCInput::RC_MaxRC)
 			CScreenSaver::getInstance()->resetIdleTime();
 
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 		if (mode == NeutrinoModes::mode_radio)
 #else
 		if (mode == NeutrinoModes::mode_radio || mode == NeutrinoModes::mode_webradio)
@@ -3269,7 +3274,7 @@ void CNeutrinoApp::RealRun()
 				StartSubtitles();
 			}
 			else if (((msg == CRCInput::RC_tv) || (msg == CRCInput::RC_radio)) && (g_settings.key_tvradio_mode == (int)CRCInput::RC_nokey)) {
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 				if (msg == CRCInput::RC_tv)
 				{
 					if (mode == NeutrinoModes::mode_radio || mode == NeutrinoModes::mode_webradio)
@@ -3664,7 +3669,7 @@ int CNeutrinoApp::handleMsg(const neutrino_msg_t _msg, neutrino_msg_data_t data)
 			g_settings.audio_AnalogMode = 0;
 
 		CVFD::getInstance()->UpdateIcons();
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 		C3DSetup::getInstance()->exec(NULL, "zapped");
 #endif
 #ifdef ENABLE_GRAPHLCD
@@ -4004,7 +4009,7 @@ int CNeutrinoApp::handleMsg(const neutrino_msg_t _msg, neutrino_msg_data_t data)
 		if (g_Radiotext)
 			g_Radiotext->setPid(0);
 
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 		if (!CRecordManager::getInstance()->GetRecordCount()) {
 			CVFD::getInstance()->ShowIcon(FP_ICON_CAM1, false);
 		}
@@ -4516,7 +4521,11 @@ void CNeutrinoApp::saveEpg(int _mode)
 
 		CVFD::getInstance()->Clear();
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, g_Locale->getText(LOCALE_EPG_SAVING));
+#else
 		CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_EPG_SAVING));
+#endif
 
 		printf("[neutrino] Saving EPG to %s...\n", g_settings.epg_dir.c_str());
 		g_Sectionsd->writeSI2XML(g_settings.epg_dir.c_str());
@@ -4670,7 +4679,11 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby, bool fromcec 
 #ifdef ENABLE_GRAPHLCD
 		cGLCD::StandbyMode(true);
 #endif
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "standby...");
+#else
 		CVFD::getInstance()->ShowText("standby...");
+#endif
 		if( mode == NeutrinoModes::mode_avinput ) {
 		}
 		g_InfoViewer->setUpdateTimer(0); // delete timer
@@ -4730,6 +4743,7 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby, bool fromcec 
 		bool alive = recordingstatus || CEpgScan::getInstance()->Running() ||
 			CStreamManager::getInstance()->StreamStatus();
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 		//fan speed
 		if (g_info.hw_caps->has_fan)
 			CFanControlNotifier::setSpeed(1);
@@ -4747,8 +4761,11 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby, bool fromcec 
 #endif
 	} else {
 		// Active standby off
-		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "resume");
+#else
 		CVFD::getInstance()->ShowText("resume");
+#endif
 		videoDecoder->Standby(false);
 		if (!fromcec)
 			g_hdmicec->SetCECState(false);
@@ -4776,10 +4793,12 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby, bool fromcec 
 		}
 
 		frameBuffer->setActive(true);
-
+#endif
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 		//fan speed
 		if (g_info.hw_caps->has_fan)
 			CFanControlNotifier::setSpeed(g_settings.fan_speed);
+#endif
 
 		exec_controlscript(NEUTRINO_LEAVE_STANDBY_SCRIPT);
 
@@ -4962,6 +4981,18 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 	if (actionKey == "help_recording") {
 		ShowMsg(LOCALE_SETTINGS_HELP, LOCALE_RECORDINGMENU_HELP, CMsgBox::mbrBack, CMsgBox::mbBack);
 	}
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 // rescue mode
+	else if (actionKey=="rescue_mode")
+	{
+		FILE *f = fopen("/tmp/.reboot", "w");
+		if (f)
+			fclose(f);
+		proc_put("/proc/stb/fp/boot_mode", "rescue");
+		ExitRun(CNeutrinoApp::EXIT_REBOOT);
+		unlink("/tmp/.reboot");
+		returnval = menu_return::RETURN_NONE;
+	}
+#endif
 	else if (actionKey=="shutdown")
 	{
 		ExitRun(CNeutrinoApp::EXIT_SHUTDOWN);
@@ -5132,7 +5163,7 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 			exit(CNeutrinoApp::EXIT_REBOOT); // should never be reached
 		}
 	}
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	else if (actionKey == "3dmode") {
 		C3DSetup::getInstance()->exec(parent, "");
 		return menu_return::RETURN_EXIT_ALL;
@@ -5187,7 +5218,11 @@ void stop_daemons(bool stopall, bool for_flash)
 	if (for_flash) {
 		CVFD::getInstance()->Clear();
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "Stop daemons...");
+#else
 		CVFD::getInstance()->ShowText("Stop daemons...");
+#endif
 		g_settings.epg_scan_mode = CEpgScan::MODE_OFF;
 		exec_controlscript(NEUTRINO_ENTER_FLASH_SCRIPT);
 	}
@@ -5379,7 +5414,11 @@ void CNeutrinoApp::loadKeys(const char * fname)
 	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_playpause );
 #else
 	g_settings.mpkey_play = tconfig->getInt32( "mpkey.play", CRCInput::RC_play );
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 || BOXMODEL_DM8000
+	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_play );
+#else
 	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_pause );
+#endif
 #endif
 	g_settings.mpkey_audio = tconfig->getInt32( "mpkey.audio", CRCInput::RC_green );
 	g_settings.mpkey_time = tconfig->getInt32( "mpkey.time", CRCInput::RC_timeshift );
@@ -5885,7 +5924,11 @@ void CNeutrinoApp::CheckFastScan(bool standby, bool reload)
 		}
 		if (standby || (new_fst != scansettings.fst_version)) {
 			CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+			CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));
+#else
 			CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));
+#endif
 			CHintBox * fhintbox = NULL;
 			if (!standby) {
 				fhintbox = new CHintBox(LOCALE_MESSAGEBOX_INFO, g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));

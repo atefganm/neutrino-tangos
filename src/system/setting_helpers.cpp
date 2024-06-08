@@ -445,7 +445,7 @@ bool CAudioSetupNotifier::changeNotify(const neutrino_locale_t OptionName, void 
 	else if (ARE_LOCALES_EQUAL(OptionName, LOCALE_AUDIOMENU_ANALOG_OUT))
 	{
 		audioDecoder->EnableAnalogOut(g_settings.analog_out ? true : false);
-#if HAVE_ARM_HARDWARE
+#if HAVE_ARM_HARDWARE || HAVE_MIPS_HARDWARE
 	}
 	else if (ARE_LOCALES_EQUAL(OptionName, LOCALE_AUDIOMENU_AC3))
 	{
@@ -785,41 +785,129 @@ int CDataResetNotifier::exec(CMenuTarget * /*parent*/, const std::string &action
 	return ret;
 }
 
-void CFanControlNotifier::setSpeed(unsigned int)
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_UFS922 || BOXMODEL_CUBEREVO || BOXMODEL_CUBEREVO_MINI2 || BOXMODEL_CUBEREVO_250HD || BOXMODEL_CUBEREVO_3000HD || BOXMODEL_IPBOX9900 || BOXMODEL_IPBOX99 || BOXMODEL_VUDUO2 || BOXMODEL_VUULTIMO || BOXMODEL_VUUNO
+#if HAVE_DUCKBOX_HARDWARE
+void CFanControlNotifier::setSpeed(unsigned int speed)
 {
-}
+	int cfd;
 
-bool CFanControlNotifier::changeNotify(const neutrino_locale_t, void *)
-{
-	return false;
-}
-
-bool CCpuFreqNotifier::changeNotify(const neutrino_locale_t, void *data)
-{
-	return false;
-}
-
-extern CMenuOptionChooser::keyval_ext VIDEOMENU_VIDEOMODE_OPTIONS[];
-bool CAutoModeNotifier::changeNotify(const neutrino_locale_t /*OptionName*/, void * /* data */)
-{
-	int i;
-	int modes[VIDEO_STD_MAX + 1];
-
-	memset(modes, 0, sizeof(modes));
-
-	for (i = 0; i < VIDEOMENU_VIDEOMODE_OPTION_COUNT; i++)
+	printf("FAN Speed %d\n", speed);
+#if defined (BOXMODEL_IPBOX9900) || defined (BOXMODEL_IPBOX99)
+	cfd = open("/proc/stb/misc/fan", O_WRONLY);
+	if (cfd < 0)
 	{
-		if (VIDEOMENU_VIDEOMODE_OPTIONS[i].key < 0) /* not available on this platform */
-			continue;
-		if (VIDEOMENU_VIDEOMODE_OPTIONS[i].key >= VIDEO_STD_MAX)
-		{
-			/* this must not happen */
-			printf("CAutoModeNotifier::changeNotify VIDEOMODE_OPTIONS[%d].key = %d (>= %d)\n",
-				i, VIDEOMENU_VIDEOMODE_OPTIONS[i].key, VIDEO_STD_MAX);
-			continue;
-		}
-		modes[VIDEOMENU_VIDEOMODE_OPTIONS[i].key] = g_settings.enabled_video_modes[i];
+		perror("Cannot open /proc/stb/misc/fan");
+#else
+	cfd = open("/proc/stb/fan/fan_ctrl", O_WRONLY);
+	if (cfd < 0)
+	{
+		perror("Cannot open /proc/stb/fan/fan_ctrl");
+#endif
+		return;
 	}
-	videoDecoder->SetAutoModes(modes);
+
+	switch (speed)
+
+#if defined (BOXMODEL_IPBOX9900) || defined (BOXMODEL_IPBOX99)
+	{
+		case 0:
+			write(cfd, "0", 1);
+			break;
+		case 1:
+			write(cfd, "1", 1);
+			break;
+	}
+#else
+	{
+		case 1:
+			write(cfd, "115", 3);
+			break;
+		case 2:
+			write(cfd, "130", 3);
+			break;
+		case 3:
+			write(cfd, "145", 3);
+			break;
+		case 4:
+			write(cfd, "160", 3);
+			break;
+		case 5:
+			write(cfd, "170", 3);
+	}
+#endif
+	close(cfd);
+}
+#else
+void CFanControlNotifier::setSpeed(unsigned int __attribute__((unused)) speed)
+{
+#if defined (BOXMODEL_DM8000) || defined (BOXMODEL_DM820) || defined (BOXMODEL_DM7080)
+	int cfd;
+	cfd = open("/proc/stb/fp/fan_vlt", O_WRONLY);
+	if (cfd < 0)
+	{
+		perror("Cannot open /proc/stb/fp/fan_vlt");
+		return;
+	}
+	switch (speed)
+	{
+		case 0:
+			write(cfd, "00000000", 8);
+			break;
+		case 1:
+			write(cfd, "FFFFFFFF", 8);
+			break;
+	}
+	close(cfd);
+#endif
+#if defined (BOXMODEL_VUDUO2) || defined (BOXMODEL_VUULTIMO) || defined (BOXMODEL_VUUNO)
+	int cfd;
+	cfd = open("/proc/stb/fp/fan_pwm", O_WRONLY);
+	if (cfd < 0)
+	{
+		perror("Cannot open /proc/stb/fp/fan_pwm");
+		return;
+	}
+	switch (speed)
+	{
+		case 1:
+			write(cfd, "10", 2);
+			break;
+		case 2:
+			write(cfd, "20", 2);
+			break;
+		case 3:
+			write(cfd, "30", 2);
+			break;
+		case 4:
+			write(cfd, "40", 2);
+			break;
+		case 5:
+			write(cfd, "50", 2);
+			break;
+		case 6:
+			write(cfd, "60", 2);
+			break;
+		case 7:
+			write(cfd, "70", 2);
+			break;
+		case 8:
+			write(cfd, "80", 2);
+			break;
+		case 9:
+			write(cfd, "90", 2);
+			break;
+		case 10:
+			write(cfd, "100", 3);
+	}
+	close(cfd);
+#endif
+}
+#endif
+
+bool CFanControlNotifier::changeNotify(const neutrino_locale_t, void *data)
+{
+	unsigned int speed = * (int *) data;
+	setSpeed(speed);
 	return false;
 }
+#endif

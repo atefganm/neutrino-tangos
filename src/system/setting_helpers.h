@@ -144,12 +144,14 @@ class CDataResetNotifier : public CMenuTarget
 		int exec(CMenuTarget *parent, const std::string &actionKey);
 };
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 class CFanControlNotifier : public CChangeObserver
 {
 	public:
 		bool changeNotify(const neutrino_locale_t, void *data);
 		static void setSpeed(unsigned int speed);
 };
+#endif
 
 class CCpuFreqNotifier : public CChangeObserver
 {
