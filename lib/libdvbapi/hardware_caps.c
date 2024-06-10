@@ -16,6 +16,7 @@
 #include <sys/ioctl.h>
 
 #include <hardware_caps.h>
+#include <proc_tools.h>
 
 #define FP_DEV "/dev/dbox/oled0"
 static int initialized = 0;
@@ -552,6 +553,140 @@ hw_caps_t *get_hwcaps(void)
 	strcpy(caps.boxvendor, "GIGABLUE");
 	strcpy(caps.boxname, "UHD UE 4K");
 	strcpy(caps.boxarch, "BCM7252S");
+#endif
+#if BOXMODEL_DM900
+	initialized = 1;
+	caps.has_CI = 1;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 400;
+	caps.display_yres = 240;
+	caps.display_type = HW_DISPLAY_GFX;
+	caps.display_can_deepstandby = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_can_set_brightness = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_has_statusline = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_has_colon = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;			// 2
+	caps.has_HDMI_input = 0;		// 1
+	strcpy(caps.boxvendor, "DM");
+	strcpy(caps.boxname, "900 UHD");
+	strcpy(caps.boxarch, "BCM7252S");
+#if BOXMODEL_DM920
+	initialized = 1;
+	caps.has_CI = 2;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 400;
+	caps.display_yres = 240;
+	caps.display_type = HW_DISPLAY_GFX;
+	caps.display_can_deepstandby = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_can_set_brightness = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_has_statusline = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.display_has_colon = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;			// 2
+	caps.has_HDMI_input = 0;		// 1
+	strcpy(caps.boxvendor, "DM");
+	strcpy(caps.boxname, "920 UHD");
+	strcpy(caps.boxarch, "BCM7252S");
+#else // generic arm box
+	initialized = 1;
+	caps.has_CI = 1;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 4;
+	caps.display_has_colon = 1;
+	caps.display_type = HW_DISPLAY_LED_NUM;
+	caps.display_can_deepstandby = 1;	// 0 because we use graphlcd/lcd4linux
+	caps.display_can_set_brightness = 1;	// 0 because we use graphlcd/lcd4linux
+	caps.display_has_statusline = 0;	// 0 because we use graphlcd/lcd4linux
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;
+	caps.has_SCART = 1;
+	proc_get("/proc/stb/info/boxtype", caps.boxvendor, 10);
+	proc_get("/proc/stb/info/model", caps.boxname, 10);
+	proc_get("/proc/stb/info/chipset", caps.boxarch, 10);
+#endif
+#if BOXMODEL_DM8000
+	initialized = 1;
+	caps.has_CI = 2;
+	caps.can_cec = 0;
+	caps.can_shutdown = 1;
+	caps.display_xres = 132;
+	caps.display_yres = 64;
+//	caps.display_xres = 400;		Grautec lcd
+//	caps.display_yres = 240;		Grautec lcd
+	caps.display_type = HW_DISPLAY_GFX;
+	caps.display_can_deepstandby = 1;
+	caps.display_can_set_brightness = 1;
+	caps.display_has_statusline = 1;
+	caps.display_has_colon = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;			// has only DVI, but works
+	caps.has_SCART = 2;
+//	caps.has_SCART_input = 1;
+//	caps.has_DVI = 1;
+	strcpy(caps.boxvendor, "DM");
+	strcpy(caps.boxname, "8000HD");
+	strcpy(caps.boxarch, "BCM7400D2");
+#endif
+#if BOXMODEL_DM820
+	initialized = 1;
+	caps.has_CI = 0;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 96;
+	caps.display_yres = 64;
+	caps.display_type = HW_DISPLAY_GFX;
+	caps.display_can_deepstandby = 1;
+	caps.display_can_set_brightness = 1;
+	caps.display_has_statusline = 1;
+	caps.display_has_colon = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;		// 2
+	caps.has_HDMI_input = 0;	// 1
+	strcpy(caps.boxvendor, "DM");
+	strcpy(caps.boxname, "820HD");
+	strcpy(caps.boxarch, "BCM7434");
+#endif
+#if BOXMODEL_DM7080
+	initialized = 1;
+	caps.has_CI = 2;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 132;
+	caps.display_yres = 64;
+//	caps.display_xres = 400;		Grautec lcd
+//	caps.display_yres = 240;		Grautec lcd
+	caps.display_type = HW_DISPLAY_GFX;
+	caps.display_can_deepstandby = 1;
+	caps.display_can_set_brightness = 1;
+	caps.display_has_statusline = 1;
+	caps.display_has_colon = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;		// 2
+	caps.has_HDMI_input = 0;	// 1
+	strcpy(caps.boxvendor, "DM");
+	strcpy(caps.boxname, "7080HD");
+	strcpy(caps.boxarch, "BCM7434");
+#else // generic mips box
+	initialized = 1;
+	caps.has_CI = 1;
+	caps.can_cec = 1;
+	caps.can_shutdown = 1;
+	caps.display_xres = 4;
+	caps.display_has_colon = 1;
+	caps.display_type = HW_DISPLAY_LED_NUM;
+	caps.display_can_deepstandby = 1;
+	caps.display_can_set_brightness = 1;
+	caps.display_has_statusline = 0;
+	caps.has_button_timer = 1;
+	caps.has_HDMI = 1;
+	caps.has_SCART = 1;
+	proc_get("/proc/stb/info/boxtype", caps.boxvendor, 10);
+	proc_get("/proc/stb/info/model", caps.boxname, 10);
+	proc_get("/proc/stb/info/chipset", caps.boxarch, 10);
 #endif
 	return &caps;
 }
