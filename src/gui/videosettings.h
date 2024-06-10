@@ -41,30 +41,32 @@ class CVideoSettings : public CMenuWidget, CChangeObserver
 		CMenuForwarder 		*SyncControlerForwarder;
 
 		int			prev_video_mode;
-		
+
 		int is_wizard;
-		
+
 		int width, selected;
 		int showVideoSetup();
 		std::vector<CMenuOptionChooser::keyval_ext> videomenu_43mode_options;
 		void Init43ModeOptions();
 
-public:
+	public:
 		CVideoSettings(int wizard_mode = SNeutrinoSettings::WIZARD_OFF);
 		~CVideoSettings();
-		
+
 		virtual bool changeNotify(const neutrino_locale_t OptionName, void *data);
 		//virtual void paint();
 		void nextMode();
 		void next43Mode();
 		void SwitchFormat();
 
-		void initVideoSettings();
+		void setVideoSettings();
 		void setupVideoSystem(bool do_ask);
-		
-		void setWizardMode(int mode) {is_wizard = mode;};
-		
-		int exec(CMenuTarget* parent, const std::string & actionKey);
+
+		void setWizardMode(int mode)
+		{
+			is_wizard = mode;
+		};
+
+		int exec(CMenuTarget *parent, const std::string &actionKey);
 };
 #endif
-
