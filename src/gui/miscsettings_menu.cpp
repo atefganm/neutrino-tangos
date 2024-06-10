@@ -73,8 +73,9 @@ CMiscMenue::CMiscMenue()
 {
 	width = 50;
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	fanNotifier = NULL;
-	cpuNotifier = NULL;
+#endif
 	sectionsdConfigNotifier = NULL;
 
 	epg_save = NULL;
@@ -362,8 +363,10 @@ int CMiscMenue::showMiscSettingsMenu()
 	misc_menue.addItem(mf);
 	int res = misc_menue.exec(NULL, "");
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	delete fanNotifier;
 	fanNotifier = NULL;
+#endif
 	delete sectionsdConfigNotifier;
 	sectionsdConfigNotifier = NULL;
 	delete cpuNotifier;
@@ -393,17 +396,22 @@ void CMiscMenue::showMiscSettingsMenuGeneral(CMenuWidget *ms_general)
 	mc->setHint("", LOCALE_MENU_HINT_CACHE_TXT);
 	ms_general->addItem(mc);
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	//fan speed
-	if (g_info.hw_caps->has_fan)
-	{
-		if (fanNotifier == NULL)
-			fanNotifier = new CFanControlNotifier();
-		CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 1, 14, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
-		mn->setHint("", LOCALE_MENU_HINT_FAN_SPEED);
-		ms_general->addItem(mn);
-	}
+	if (fanNotifier == NULL)
+		fanNotifier = new CFanControlNotifier();
+#if defined (BOXMODEL_DM8000) || defined (BOXMODEL_DM820) || defined (BOXMODEL_DM7080)
+	CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 0, 1, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
+#else
+	CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 1, 10, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
+#else
+	CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 1, 14, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);
+#endif
+	mn->setHint("", LOCALE_MENU_HINT_FAN_SPEED);
+	ms_general->addItem(mn);
 
 	ms_general->addItem(GenericMenuSeparatorLine);
+#endif
 
 	CMenuForwarder * mf = new CMenuForwarder(LOCALE_PLUGINS_HDD_DIR, true, g_settings.plugin_hdd_dir, this, "plugin_dir");
 	mf->setHint("", LOCALE_MENU_HINT_PLUGINS_HDD_DIR);

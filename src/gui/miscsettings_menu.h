@@ -38,8 +38,9 @@
 class CMiscMenue : public CMenuTarget, CChangeObserver
 {
 	private:
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 		CFanControlNotifier *fanNotifier;
-		CCpuFreqNotifier * cpuNotifier;
+#endif
 		CSectionsdConfigNotifier* sectionsdConfigNotifier;
 		//COnOffNotifier* miscNotifier;
 		CMenuOptionChooser * epg_save;

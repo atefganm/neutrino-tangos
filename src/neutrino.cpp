@@ -267,6 +267,9 @@ CNeutrinoApp::CNeutrinoApp()
 	frameBuffer = CFrameBuffer::getInstance();
 	frameBuffer->setIconBasePath(ICONSDIR);
 	SetupFrameBuffer();
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 // needs setup twice
+	SetupFrameBuffer();
+#endif
 
 	mode 			= NeutrinoModes::mode_unknown;
 	lastMode		= NeutrinoModes::mode_unknown;
@@ -444,8 +447,10 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	if (g_settings.channel_mode_initial_radio > -1)
 		g_settings.channel_mode_radio = g_settings.channel_mode_initial_radio;
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	g_settings.fan_speed = configfile.getInt32( "fan_speed", 1);
 	if(g_settings.fan_speed < 1) g_settings.fan_speed = 1;
+#endif
 
 	g_settings.srs_enable = configfile.getInt32( "srs_enable", 0);
 	g_settings.srs_algo = configfile.getInt32( "srs_algo", 1);
@@ -1458,7 +1463,9 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32( "channel_mode_initial", g_settings.channel_mode_initial );
 	configfile.setInt32( "channel_mode_initial_radio", g_settings.channel_mode_initial_radio );
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	configfile.setInt32( "fan_speed", g_settings.fan_speed);
+#endif
 
 	configfile.setInt32( "srs_enable", g_settings.srs_enable);
 	configfile.setInt32( "srs_algo", g_settings.srs_algo);
@@ -2870,11 +2877,12 @@ TIMER_START();
 	cpuFreq = new cCpuFreqManager();
 	cpuFreq->SetCpuFreq(g_settings.cpufreq * 1000 * 1000);
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 	//fan speed
 	dprintf(DEBUG_NORMAL, "g_info.has_fan: %d\n", g_info.hw_caps->has_fan);
 	if (g_info.hw_caps->has_fan)
 		CFanControlNotifier::setSpeed(g_settings.fan_speed);
-
+#endif
 	dvbsub_init();
 
 	bootstatus->showStatus(75);
@@ -4585,8 +4593,9 @@ void CNeutrinoApp::ExitRun(int exit_code)
 	delete g_RCInput;
 	g_RCInput = NULL;
 
-	if (g_info.hw_caps->has_fan)
-		CFanControlNotifier::setSpeed(0);
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
+	CFanControlNotifier::setSpeed(0);
+#endif
 
 	delete CVFD::getInstance();
 	delete SHTDCNT::getInstance();
@@ -4627,7 +4636,11 @@ void CNeutrinoApp::saveEpg(int _mode)
 
 		CVFD::getInstance()->Clear();
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, g_Locale->getText(LOCALE_EPG_SAVING));
+#else
 		CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_EPG_SAVING));
+#endif
 
 		printf("[neutrino] Saving EPG to %s...\n", g_settings.epg_dir.c_str());
 		g_Sectionsd->writeSI2XML(g_settings.epg_dir.c_str());
@@ -4787,7 +4800,11 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 #ifdef ENABLE_GRAPHLCD
 		cGLCD::StandbyMode(true);
 #endif
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "standby...");
+#else
 		CVFD::getInstance()->ShowText("standby...");
+#endif
 		if( mode == NeutrinoModes::mode_avinput ) {
 		}
 		g_InfoViewer->setUpdateTimer(0); // delete timer
@@ -4850,9 +4867,10 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		if(!alive)
 			cpuFreq->SetCpuFreq(g_settings.standby_cpufreq * 1000 * 1000);
 
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 		//fan speed
-		if (g_info.hw_caps->has_fan)
-			CFanControlNotifier::setSpeed(1);
+		CFanControlNotifier::setSpeed(1);
+#endif
 
 		if (g_InfoViewer->is_visible)
 			g_InfoViewer->killTitle();
@@ -4870,6 +4888,9 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		// Active standby off
 		powerManager->SetStandby(false, false);
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "resume");
+#else
 		CVFD::getInstance()->ShowText("resume");
 		cpuFreq->SetCpuFreq(g_settings.cpufreq * 1000 * 1000);
 		videoDecoder->Standby(false);
@@ -4901,11 +4922,11 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		}
 
 		frameBuffer->setActive(true);
-
+#endif
+#if BOXMODEL_DM8000 || BOXMODEL_DM820 || BOXMODEL_DM7080
 		//fan speed
-		if (g_info.hw_caps->has_fan)
-			CFanControlNotifier::setSpeed(g_settings.fan_speed);
-
+		CFanControlNotifier::setSpeed(g_settings.fan_speed);
+#endif
 		exec_controlscript(NEUTRINO_LEAVE_STANDBY_SCRIPT);
 
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
@@ -5086,12 +5107,29 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 	if (actionKey == "help_recording") {
 		ShowMsg(LOCALE_SETTINGS_HELP, LOCALE_RECORDINGMENU_HELP, CMsgBox::mbrBack, CMsgBox::mbBack);
 	}
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 // rescue mode
+	else if (actionKey=="rescue_mode")
+	{
+		FILE *f = fopen("/tmp/.reboot", "w");
+		if (f)
+			fclose(f);
+		proc_put("/proc/stb/fp/boot_mode", "rescue");
+		ExitRun(CNeutrinoApp::EXIT_REBOOT);
+		unlink("/tmp/.reboot");
+		returnval = menu_return::RETURN_NONE;
+	}
+#endif
 	else if (actionKey=="shutdown")
 	{
 		ExitRun(CNeutrinoApp::EXIT_SHUTDOWN);
 	}
 	else if (actionKey=="reboot")
 	{
+		FILE *f = fopen("/tmp/.reboot", "w");
+		if (f)
+			fclose(f);
+		ExitRun(CNeutrinoApp::EXIT_REBOOT);
+		unlink("/tmp/.reboot");
 		ExitRun(CNeutrinoApp::EXIT_REBOOT);
 		returnval = menu_return::RETURN_NONE;
 	}
@@ -5315,7 +5353,11 @@ void stop_daemons(bool stopall, bool for_flash)
 	if (for_flash) {
 		CVFD::getInstance()->Clear();
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, "Stop daemons...");
+#else
 		CVFD::getInstance()->ShowText("Stop daemons...");
+#endif
 		g_settings.epg_scan_mode = CEpgScan::MODE_OFF;
 		exec_controlscript(NEUTRINO_ENTER_FLASH_SCRIPT);
 	}
@@ -5526,7 +5568,11 @@ void CNeutrinoApp::loadKeys(const char * fname)
 	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_playpause );
 #else
 	g_settings.mpkey_play = tconfig->getInt32( "mpkey.play", CRCInput::RC_play );
+#if BOXMODEL_DM820 || BOXMODEL_DM7080 || BOXMODEL_DM900 || BOXMODEL_DM920 || BOXMODEL_DM8000
+	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_play );
+#else
 	g_settings.mpkey_pause = tconfig->getInt32( "mpkey.pause", CRCInput::RC_pause );
+#endif
 #endif
 	g_settings.mpkey_audio = tconfig->getInt32( "mpkey.audio", CRCInput::RC_green );
 	g_settings.mpkey_time = tconfig->getInt32( "mpkey.time", CRCInput::RC_timeshift );
@@ -6040,7 +6086,11 @@ void CNeutrinoApp::CheckFastScan(bool standby, bool reload)
 		}
 		if (standby || (new_fst != scansettings.fst_version)) {
 			CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+			CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8, g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));
+#else
 			CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));
+#endif
 			CHintBox * fhintbox = NULL;
 			if (!standby) {
 				fhintbox = new CHintBox(LOCALE_MESSAGEBOX_INFO, g_Locale->getText(LOCALE_SATSETUP_FASTSCAN_HEAD));

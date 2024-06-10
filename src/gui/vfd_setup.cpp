@@ -164,27 +164,34 @@ int CVfdSetup::showSetup()
 		CMenuOptionChooser* oj;
 
 #if ENABLE_LCD
-#if 0
+#if BOXMODEL_DM8000 || BOXMODEL_DM7080
 		//option power
 		oj = new CMenuOptionChooser("Power LCD"/*LOCALE_LCDMENU_POWER*/, &g_settings.lcd_setting[SNeutrinoSettings::LCD_POWER], OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true, new CLCDNotifier(), CRCInput::RC_nokey);
 		vfds->addItem(oj);
 #endif
+#if BOXMODEL_DM820
+		g_settings.lcd_setting[SNeutrinoSettings::LCD_INVERSE] = 0;
+#else
 		//option invert
 		oj = new CMenuOptionChooser("Invert LCD"/*LOCALE_LCDMENU_INVERSE*/, &g_settings.lcd_setting[SNeutrinoSettings::LCD_INVERSE], OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true, new CLCDNotifier(), CRCInput::RC_nokey);
 		vfds->addItem(oj);
+#endif
 #endif
 
 		if (g_info.hw_caps->display_has_statusline)
 		{
 			//status line options
-			oj = new CMenuOptionChooser(LOCALE_LCDMENU_STATUSLINE, &g_settings.lcd_setting[SNeutrinoSettings::LCD_SHOW_VOLUME], LCDMENU_STATUSLINE_OPTIONS, LCDMENU_STATUSLINE_OPTION_COUNT, vfd_enabled);
+			oj = new CMenuOptionChooser(LOCALE_LCDMENU_STATUSLINE, &g_settings.lcd_setting[SNeutrinoSettings::LCD_SHOW_VOLUME], LCDMENU_STATUSLINE_OPTIONS, LCDMENU_STATUSLINE_OPTION_COUNT, true);
 			oj->setHint("", LOCALE_MENU_HINT_VFD_STATUSLINE);
 			vfds->addItem(oj);
 		}
 
-#ifndef ENABLE_LCD
+#if BOXMODEL_DM820 || BOXMODEL_DM7080
+		g_settings.lcd_info_line = 0;
+		g_settings.lcd_scroll = 0;
+#else
 		//info line options
-		oj = new CMenuOptionChooser(LOCALE_LCD_INFO_LINE, &g_settings.lcd_info_line, LCD_INFO_OPTIONS, LCD_INFO_OPTION_COUNT, vfd_enabled);
+		oj = new CMenuOptionChooser(LOCALE_LCD_INFO_LINE, &g_settings.lcd_info_line, LCD_INFO_OPTIONS, LCD_INFO_OPTION_COUNT, true);
 		oj->setHint("", LOCALE_MENU_HINT_VFD_INFOLINE);
 		vfds->addItem(oj);
 
@@ -212,7 +219,16 @@ int CVfdSetup::showSetup()
 #endif // ENABLE_LCD
 	}
 
-#if !defined BOXMODEL_VUSOLO4K && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_VUUNO4KSE
+	if (g_info.hw_caps->display_type == HW_DISPLAY_LED_NUM)
+	{
+		//LED NUM info line options
+		CMenuOptionChooser* led_num;
+		led_num = new CMenuOptionChooser(LOCALE_LCD_INFO_LINE, &g_settings.lcd_info_line, LCD_INFO_OPTIONS, LCD_INFO_OPTION_COUNT, true);
+		led_num->setHint("", LOCALE_MENU_HINT_VFD_INFOLINE);
+		vfds->addItem(led_num);
+	}
+
+#if !defined BOXMODEL_VUSOLO4K && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_DM820 && !defined BOXMODEL_DM7080 && !defined BOXMODEL_DM900 && !defined BOXMODEL_DM920 && !defined BOXMODEL_DM8000 && !defined BOXMODEL_VUUNO4KSE
 #if ENABLE_LCD4LINUX && ENABLE_GRAPHLCD
 	if (g_settings.glcd_enable != 0 && g_settings.lcd4l_support != 0) {
 		g_settings.glcd_enable = 0;
@@ -222,7 +238,7 @@ int CVfdSetup::showSetup()
 #endif
 
 #ifdef ENABLE_LCD4LINUX
-#if !defined (BOXMODEL_VUSOLO4K) && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_VUUNO4KSE && defined (ENABLE_GRAPHLCD)
+#if !defined (BOXMODEL_VUSOLO4K) && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_VUUNO4KSE && !defined BOXMODEL_DM820 && !defined BOXMODEL_DM7080 && !defined BOXMODEL_DM900 && !defined BOXMODEL_DM920 && !defined BOXMODEL_DM8000 && defined (ENABLE_GRAPHLCD)
 	if (g_settings.glcd_enable == 0)
 #endif
 	{
@@ -234,7 +250,7 @@ int CVfdSetup::showSetup()
 #ifdef ENABLE_GRAPHLCD
 	GLCD_Menu glcdMenu;
 #ifdef ENABLE_LCD4LINUX
-#if !defined BOXMODEL_VUSOLO4K && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_VUUNO4KSE
+#if !defined BOXMODEL_VUSOLO4K && !defined BOXMODEL_VUDUO4K && !defined BOXMODEL_VUULTIMO4K && !defined BOXMODEL_VUUNO4KSE && !defined BOXMODEL_DM820 && !defined BOXMODEL_DM7080 && !defined BOXMODEL_DM900 && !defined BOXMODEL_DM920 && !defined BOXMODEL_DM8000
 	if (g_settings.lcd4l_support == 0)
 #endif
 #endif
@@ -265,8 +281,10 @@ int CVfdSetup::showBrightnessSetup()
 
 #if defined (ENABLE_LCD)
 	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESS, &brightness, true, 0, 255, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
-#else
+#elif defined (HAVE_ARM_HARDWARE) || defined (HAVE_MIPS_HARDWARE)
 	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESS, &brightness, true, 0, 15, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
+#else
+	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESS, &brightness, true, 0, 7, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
 #endif
 	nc->setHint("", LOCALE_MENU_HINT_VFD_BRIGHTNESS);
 	nc->setActivateObserver(this);
@@ -274,8 +292,10 @@ int CVfdSetup::showBrightnessSetup()
 
 #if defined (ENABLE_LCD)
 	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSSTANDBY, &brightnessstandby, true, 0, 255, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
-#else
+#elif defined (HAVE_ARM_HARDWARE) || defined (HAVE_MIPS_HARDWARE)
 	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSSTANDBY, &brightnessstandby, true, 0, 15, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
+#else
+	nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSSTANDBY, &brightnessstandby, true, 0, 7, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
 #endif
 	nc->setHint("", LOCALE_MENU_HINT_VFD_BRIGHTNESSSTANDBY);
 	nc->setActivateObserver(this);
@@ -285,8 +305,10 @@ int CVfdSetup::showBrightnessSetup()
 	{
 #if defined (ENABLE_LCD)
 		nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSDEEPSTANDBY, &brightnessdeepstandby, true, 0, 255, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
-#else
+#elif defined (HAVE_ARM_HARDWARE) || defined (HAVE_MIPS_HARDWARE)
 		nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSDEEPSTANDBY, &brightnessdeepstandby, true, 0, 15, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
+#else
+		nc = new CMenuOptionNumberChooser(LOCALE_LCDCONTROLER_BRIGHTNESSDEEPSTANDBY, &brightnessdeepstandby, true, 0, 7, this, CRCInput::RC_nokey, NULL, 0, 0, NONEXISTANT_LOCALE, true);
 #endif
 		nc->setHint("", LOCALE_MENU_HINT_VFD_BRIGHTNESSDEEPSTANDBY);
 		nc->setActivateObserver(this);
@@ -295,8 +317,10 @@ int CVfdSetup::showBrightnessSetup()
 
 #if defined (ENABLE_LCD)
 	nc = new CMenuOptionNumberChooser(LOCALE_LCDMENU_DIM_BRIGHTNESS, &g_settings.lcd_setting_dim_brightness, true, -1, 255, NULL, CRCInput::RC_nokey, NULL, 0, -1, LOCALE_OPTIONS_OFF, true);
+#elif defined (HAVE_ARM_HARDWARE) || defined (HAVE_MIPS_HARDWARE)
+	nc = new CMenuOptionNumberChooser(LOCALE_LCDMENU_DIM_BRIGHTNESS, &g_settings.lcd_setting_dim_brightness, true, -1, 15, NULL, CRCInput::RC_nokey, NULL, 0, -1, LOCALE_OPTIONS_OFF, true);
 #else
-	nc = new CMenuOptionNumberChooser(LOCALE_LCDMENU_DIM_BRIGHTNESS, &g_settings.lcd_setting_dim_brightness, vfd_enabled, -1, 15, NULL, CRCInput::RC_nokey, NULL, 0, -1, LOCALE_OPTIONS_OFF, true);
+	nc = new CMenuOptionNumberChooser(LOCALE_LCDMENU_DIM_BRIGHTNESS, &g_settings.lcd_setting_dim_brightness, true, -1, 7, NULL, CRCInput::RC_nokey, NULL, 0, -1, LOCALE_OPTIONS_OFF, true);
 #endif
 	nc->setHint("", LOCALE_MENU_HINT_VFD_BRIGHTNESSDIM);
 	nc->setActivateObserver(this);
@@ -305,7 +329,7 @@ int CVfdSetup::showBrightnessSetup()
 	mn_widget->addItem(GenericMenuSeparatorLine);
 	CStringInput *dim_time = new CStringInput(LOCALE_LCDMENU_DIM_TIME, &g_settings.lcd_setting_dim_time, 3, NONEXISTANT_LOCALE, NONEXISTANT_LOCALE,"0123456789 ");
 
-	mf = new CMenuForwarder(LOCALE_LCDMENU_DIM_TIME, vfd_enabled, g_settings.lcd_setting_dim_time, dim_time);
+	mf = new CMenuForwarder(LOCALE_LCDMENU_DIM_TIME, true, g_settings.lcd_setting_dim_time, dim_time);
 	mf->setHint("", LOCALE_MENU_HINT_VFD_DIMTIME);
 	mf->setActivateObserver(this);
 	mn_widget->addItem(mf);
@@ -419,7 +443,7 @@ bool CLCDNotifier::changeNotify(const neutrino_locale_t, void * Data)
 	int state = *(int *)Data;
 
 	dprintf(DEBUG_NORMAL, "CLCDNotifier: state: %d\n", state);
-#if 0
+#if BOXMODEL_DM8000 || BOXMODEL_DM7080
 	CVFD::getInstance()->setPower(state);
 #else
 	CVFD::getInstance()->setPower(1);
